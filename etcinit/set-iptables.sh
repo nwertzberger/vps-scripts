@@ -27,6 +27,7 @@ $IPT -A OUTPUT -o ${LO_IF} -j ACCEPT
 
 # Allow related stuff.
 $IPT -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+$IPT -A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
  
 # Drop sync
 $IPT -A INPUT -i ${PUB_IF} -p tcp ! --syn -m state --state NEW -j DROP
@@ -73,30 +74,49 @@ $IPT  -A INPUT -i ${PUB_IF} -m state --state INVALID -j DROP
 #         $IPT -A spooflist -i ${PUB_IF} -s $ipblock -j LOG --log-prefix " SPOOF List Block "
 #         $IPT -A spooflist -i ${PUB_IF} -s $ipblock -j DROP
 #done
-
 #$IPT -I INPUT -j spooflist
 #$IPT -I OUTPUT -j spooflist
 #$IPT -I FORWARD -j spooflist
+
+
+###################################################################
+# Two-way
+###################################################################
  
 # Allow ssh
-$IPT -A INPUT -i ${PUB_IF} -p tcp -j ACCEPT
-$IPT -A OUTPUT -o ${PUB_IF} -p tcp -j ACCEPT
- 
-# allow incoming ICMP ping pong stuff
-$IPT -A INPUT -i ${PUB_IF} -p icmp --icmp-type 8 -s 0/0 -m state --state NEW,ESTABLISHED,RELATED -m limit --limit 30/sec  -j ACCEPT
-$IPT -A OUTPUT -o ${PUB_IF} -p icmp --icmp-type 0 -d 0/0 -m state --state ESTABLISHED,RELATED -j ACCEPT
- 
+$IPT -A INPUT -i ${PUB_IF}  -p tcp --dport 22 -j ACCEPT
+$IPT -A OUTPUT -o ${PUB_IF} -p tcp --dport 22 -j ACCEPT
+
 # allow HTTP port 80 
-$IPT -A INPUT -i ${PUB_IF} -p tcp -j ACCEPT
-$IPT -A OUTPUT -o ${PUB_IF} -p tcp -j ACCEPT
+$IPT -A INPUT -i ${PUB_IF} -p tcp --dport 80 -j ACCEPT
+$IPT -A OUTPUT -o ${PUB_IF} -p tcp --dport 80 -j ACCEPT
 
 # allow HTTPS port 443
-$IPT -A INPUT -i ${PUB_IF} -p tcp -j ACCEPT
-$IPT -A OUTPUT -o ${PUB_IF} -p tcp -j ACCEPT
+$IPT -A INPUT -i ${PUB_IF} -p tcp --dport 443 -j ACCEPT
+$IPT -A OUTPUT -o ${PUB_IF} -p tcp --dport 443 -j ACCEPT
 
+
+###################################################################
+# Incoming
+###################################################################
+
+# allow incoming ICMP ping pong stuff
+$IPT -A INPUT -i ${PUB_IF} -p icmp --icmp-type 8 -s 0/0 -m state --state NEW,ESTABLISHED,RELATED -m limit --limit 30/sec  -j ACCEPT
+ 
 # allow incoming DHCP requests
 $IPT -A INPUT -i ${PUB_IF} -p udp --dport 67:68 --sport 67:68 -j ACCEPT
  
+# allow incoming POP3
+$IPT -A INPUT -i ${PUB_IF} -p tcp --dport 110 -j ACCEPT
+
+# allow incoming IMAP
+$IPT -A INPUT -i ${PUB_IF} -p tcp --dport 143 -j ACCEPT
+
+
+###################################################################
+# Outgoing
+###################################################################
+
 # allow outgoing ntp 
 $IPT -A OUTPUT -o ${PUB_IF} -p udp --dport 123 -j ACCEPT
  
@@ -116,8 +136,11 @@ $IPT -A OUTPUT -o ${PUB_IF} -p tcp --dport 20 -m state --state ESTABLISHED -j AC
 # Allow outgoing Passive FTP Connections
 $IPT -A OUTPUT -o ${PUB_IF} -p tcp --sport 1024: --dport 1024:  -m state --state ESTABLISHED,RELATED -j ACCEPT 
 
-#######################
+
+###################################################################
 # drop and log everything else
+###################################################################
+
 $IPT -A INPUT -m limit --limit 5/m --limit-burst 7 -j LOG --log-prefix " DEFAULT DROP "
 $IPT -A INPUT -j DROP
  
