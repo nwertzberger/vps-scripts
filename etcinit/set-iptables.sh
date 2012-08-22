@@ -95,6 +95,9 @@ $IPT -A OUTPUT -o ${PUB_IF} -p tcp --dport 80 -j ACCEPT
 $IPT -A INPUT -i ${PUB_IF} -p tcp --dport 443 -j ACCEPT
 $IPT -A OUTPUT -o ${PUB_IF} -p tcp --dport 443 -j ACCEPT
 
+# allow outgoing smtp
+$IPT -A OUTPUT -o ${PUB_IF} -p tcp --dport 25 -j ACCEPT
+$IPT -A INPUT -i ${PUB_IF} -p tcp --dport 25 -j ACCEPT
 
 ###################################################################
 # Incoming
@@ -108,9 +111,11 @@ $IPT -A INPUT -i ${PUB_IF} -p udp --dport 67:68 --sport 67:68 -j ACCEPT
  
 # allow incoming POP3
 $IPT -A INPUT -i ${PUB_IF} -p tcp --dport 110 -j ACCEPT
+$IPT -A INPUT -i ${PUB_IF} -p tcp --dport 995 -j ACCEPT
 
 # allow incoming IMAP
 $IPT -A INPUT -i ${PUB_IF} -p tcp --dport 143 -j ACCEPT
+$IPT -A INPUT -i ${PUB_IF} -p tcp --dport 993 -j ACCEPT
 
 
 ###################################################################
@@ -120,8 +125,6 @@ $IPT -A INPUT -i ${PUB_IF} -p tcp --dport 143 -j ACCEPT
 # allow outgoing ntp 
 $IPT -A OUTPUT -o ${PUB_IF} -p udp --dport 123 -j ACCEPT
  
-# allow outgoing smtp
-$IPT -A OUTPUT -o ${PUB_IF} -p tcp --dport 25 -j ACCEPT
 
 # allow outgoing DNS
 $IPT -A OUTPUT -o ${PUB_IF} -p udp -s $SERVER_IP --sport 1024:65535 --dport 53 -j ACCEPT
@@ -135,7 +138,6 @@ $IPT -A OUTPUT -o ${PUB_IF} -p tcp --dport 20 -m state --state ESTABLISHED -j AC
 
 # Allow outgoing Passive FTP Connections
 $IPT -A OUTPUT -o ${PUB_IF} -p tcp --sport 1024: --dport 1024:  -m state --state ESTABLISHED,RELATED -j ACCEPT 
-
 
 ###################################################################
 # drop and log everything else
